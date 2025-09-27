@@ -1,0 +1,66 @@
+
+from socket import *
+import pickle, threading, os
+from helpers.constants import OpCode as op_codes, serverPort, sockBuffer
+from RRQ_handler import handle_RRQ
+from DAT_handler import send_DAT, handle_DAT
+from ACK_handler import receive_and_validate_ACK, handle_ACK
+import sys
+
+def handle_ERR(data):
+    print("Received ERR code", data.get("errorcode"), ":", data.get("errormsg"))
+
+def handle_client(connSocket, addr):
+    send_DAT(connSocket, 1, f"Welcome to {connSocket.getsockname()[0]} file server".encode("ascii"))
+    res = receive_and_validate_ACK(connSocket, sockBuffer, 1 )
+    try:
+        if not res: 
+            return
+        while True:
+            received = connSocket.recv(sockBuffer)
+            if not received:
+                break;
+            data = pickle.loads(received)
+            op = data.get("opcode")
+            if op == op_codes.RRQ:
+                handle_RRQ(connSocket, data)
+            elif op == op_codes.ACK:
+                handle_ACK(data)
+            elif op == op_codes.ERR:
+                handle_ERR(data)
+            else:
+                print("Unknown opcode from", addr)
+                break
+    except Exception as e:
+        print("Error handling client:", e)
+    finally:
+        connSocket.close()
+
+
+
+def main(port):
+
+    serverSocket = socket(AF_INET,SOCK_STREAM)   # create TCP welcoming socket
+
+    try:
+        serverSocket.bind(("", port))   
+        serverSocket.listen(2)               
+        print("Server is running")          
+    except OSError:
+        print("Unable to start server")
+        return
+
+    while True:
+        connSocket, addr = serverSocket.accept()    # waits for incoming requests:
+                                                    # new socket created on return
+        threading.Thread(target=handle_client, args=(connSocket, addr), daemon=True).start()
+
+
+if __name__ == "__main__":
+    if len(sys.argv) != 2:
+        sys.exit(1)
+    try:
+        port = int(sys.argv[1])
+    except ValueError:
+        print("Port must be an integer"); sys.exit(1)
+    main(port)
