@@ -1,7 +1,7 @@
 import pickle
 from helpers.constants import OpCode as op_codes
 
-def receive_and_validate_ACK(connSocket, sockBuffer, expectedBlockNum):
+def receive_and_validate_ack(connSocket, sockBuffer, expectedBlockNum):
       data = connSocket.recv(sockBuffer)
       if not data:
           print("Peer closed before ACK")
@@ -10,7 +10,7 @@ def receive_and_validate_ACK(connSocket, sockBuffer, expectedBlockNum):
       return res.get("opcode") == op_codes.ACK and res.get("block#") == expectedBlockNum
 
 
-def send_ACK(connSocket, blockNum):
+def send_ack(connSocket, blockNum):
     ack_packet = {
         "opcode": op_codes.ACK,
         "block#": blockNum

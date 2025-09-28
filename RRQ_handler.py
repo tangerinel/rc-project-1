@@ -1,25 +1,25 @@
 from helpers.list_dir import list_dir
 import os, pickle
 from helpers.constants import OpCode as op_codes, sockBuffer
-from ACK_handler import receive_and_validate_ACK
-from DAT_handler import send_DAT
-from ERR_handler import send_ERR
+from ack_handler import receive_and_validate_ack
+from dat_handler import send_dat
+from err_handler import send_err
 
 def send_dir_listing(connSocket, dirList):
     blockNum = 1
     print("Sending directory listing with", len(dirList), "items")
     for filename in dirList:
-        send_DAT(connSocket, blockNum, filename.encode("ascii"))
-        response = receive_and_validate_ACK(connSocket, sockBuffer, blockNum )
+        send_dat(connSocket, blockNum, filename.encode("ascii"))
+        response = receive_and_validate_ack(connSocket, sockBuffer, blockNum )
         if not response:
-            send_ERR(connSocket, f"Failed to receive ACK for block {blockNum}")
+            send_err(connSocket, f"Failed to receive ACK for block {blockNum}")
             return
         blockNum += 1
     
-    send_DAT(connSocket, blockNum, b"" )
-    response = receive_and_validate_ACK(connSocket, sockBuffer, blockNum )
+    send_dat(connSocket, blockNum, b"" )
+    response = receive_and_validate_ack(connSocket, sockBuffer, blockNum )
     if not response:
-        send_ERR(connSocket, f"Failed to receive ACK for block {blockNum}")
+        send_err(connSocket, f"Failed to receive ACK for block {blockNum}")
         return
     return
 
@@ -31,23 +31,21 @@ def send_file_contents(connSocket, base_dir, filename):
         with open(filepath, "rb") as f:
             while True:
                 data = f.read(512)
-                send_DAT(connSocket, blockNum, data)
-                response = receive_and_validate_ACK(connSocket, sockBuffer, blockNum )
+                send_dat(connSocket, blockNum, data)
+                response = receive_and_validate_ack(connSocket, sockBuffer, blockNum )
                 if not response:
-                    send_ERR(connSocket, f"Failed to receive ACK for block {blockNum}")
+                    send_err(connSocket, f"Failed to receive ACK for block {blockNum}")
                     break
                 if len(data) <= 0:
                     break
                 blockNum += 1
     except Exception as e:
-        send_ERR(connSocket, f"Error reading file '{filename}': {e}")
+        send_err(connSocket, f"Error reading file '{filename}': {e}")
         return
     return
 
 
-
-
-def handle_RRQ_Request(connSocket, data):
+def handle_rrq_request(connSocket, data):
     base_dir = os.getcwd()
     filename = data.get("filename", "")
     dirList = list_dir(base_dir)
@@ -55,17 +53,17 @@ def handle_RRQ_Request(connSocket, data):
        try:
            send_dir_listing(connSocket, dirList)
        except Exception as e:
-           send_ERR(connSocket, f"Error sending directory listing: {e}")
+           send_err(connSocket, f"Error sending directory listing: {e}")
            return
     else:
         if filename not in dirList:
             print(f"File '{filename}' not found")
-            send_ERR(connSocket, f"File '{filename}' not found")
+            send_err(connSocket, f"File '{filename}' not found")
             return
         send_file_contents(connSocket, base_dir, filename)
 
 
-def send_RRQ_Request (connSocket, filename):
+def send_rrq_request (connSocket, filename):
     rrq_packet = {
         "opcode": op_codes.RRQ,
         "filename": filename

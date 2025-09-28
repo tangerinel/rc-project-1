@@ -1,7 +1,7 @@
 from helpers.constants import OpCode as op_codes
 import pickle
 
-def send_ERR(connSocket,  errorMsg):
+def send_err(connSocket,  errorMsg):
     err_packet = {
         "opcode": op_codes.ERR,
         "error": errorMsg

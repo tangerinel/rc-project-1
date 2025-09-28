@@ -6,6 +6,7 @@ __pycache__/
 .venv/
 env/
 venv/
+whi
 
 # IDE / OS files
 .vscode/

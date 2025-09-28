@@ -2,9 +2,9 @@
 from socket import *
 import pickle
 from helpers.constants import OpCode as op_codes
-from RRQ_handler import send_RRQ_Request
-from DAT_handler import receive_DAT
-from ACK_handler import send_ACK
+from rrq_handler import send_rrq_request
+from dat_handler import receive_dat
+from ack_handler import send_ack
 import sys
 import os
 from helpers.list_dir import list_dir
@@ -31,13 +31,13 @@ def main(host, port):
         print("Unable to connect with the server")
         return
 
-    #manage initial handshake
+    # manage initial handshake
     handshake = pickle.loads(clientSocket.recv(sockBuffer))
     if handshake.get("opcode") != op_codes.DAT or handshake.get("block#") != 1:
         print("Handshake failed")
         clientSocket.close()
         return
-    send_ACK(clientSocket,  handshake.get("block#"));
+    send_ack(clientSocket,  handshake.get("block#"));
 
     print(handshake.get("data").decode("ascii"))
 
@@ -49,8 +49,8 @@ def main(host, port):
             print("Connection close, client ended")
             break;
         elif cmd == "dir":
-            send_RRQ_Request(clientSocket, "")
-            res = receive_DAT(clientSocket, sockBuffer, True)
+            send_rrq_request(clientSocket, "")
+            res = receive_dat(clientSocket, sockBuffer, True)
             for item in res:
                 print(item.decode("ascii"))
         elif cmd.startswith("get "):
@@ -62,8 +62,8 @@ def main(host, port):
             local_filename = parts[2]
             if not is_valid_get_cmd(local_filename):
                 continue
-            send_RRQ_Request(clientSocket, remote_filename)
-            res = receive_DAT(clientSocket, sockBuffer)
+            send_rrq_request(clientSocket, remote_filename)
+            res = receive_dat(clientSocket, sockBuffer)
             if len(res) > 0:
                  print("File transfer completed")
         else:
@@ -76,6 +76,7 @@ def main(host, port):
 
 if __name__ == "__main__":
     if len(sys.argv) != 3:
+        print("Inavlid number of arguments!\nUsage: python client.py [server_ip][server_port]")
         sys.exit(1)
     host = sys.argv[1]
     try:
