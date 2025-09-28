@@ -2,7 +2,7 @@ from helpers.constants import OpCode as op_codes
 import pickle
 from ack_handler import send_ack
 
-def send_dat (connSocket, blockNum, data):
+def send_dat(connSocket, blockNum, data):
     data_packet = {
         "opcode": op_codes.DAT,
         "block#": blockNum,
@@ -12,7 +12,7 @@ def send_dat (connSocket, blockNum, data):
     connSocket.send(pickle.dumps(data_packet))
 
 
-def receive_dat (connSocket, sockBuffer, isDirListing=False):
+def receive_dat(connSocket, sockBuffer, isDirListing=False):
     res = []
     expectedBlockNum = 1
     while True:

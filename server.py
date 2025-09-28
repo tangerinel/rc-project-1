@@ -1,7 +1,7 @@
 
 from socket import *
 import pickle, threading
-from helpers.constants import OpCode as op_codes, sockBuffer
+from helpers.constants import OpCode, SOCKET_BUFFER
 from rrq_handler import handle_rrq_request
 from dat_handler import send_dat
 from ack_handler import receive_and_validate_ack
@@ -10,17 +10,17 @@ import sys
 
 def handle_client(connSocket, addr):
     send_dat(connSocket, 1, f"Welcome to {connSocket.getsockname()[0]} file server".encode("ascii"))
-    res = receive_and_validate_ack(connSocket, sockBuffer, 1 )
+    res = receive_and_validate_ack(connSocket, SOCKET_BUFFER, 1 )
     try:
         if not res: 
             return
         while True:
-            received = connSocket.recv(sockBuffer)
+            received = connSocket.recv(SOCKET_BUFFER)
             if not received:
                 break;
             data = pickle.loads(received)
             op = data.get("opcode")
-            if op == op_codes.RRQ:
+            if op == OpCode.RRQ:
                 handle_rrq_request(connSocket, data)
             else:
                 print("Unknown opcode from", addr)

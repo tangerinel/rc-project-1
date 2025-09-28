@@ -1,15 +1,13 @@
 
 from socket import *
 import pickle
-from helpers.constants import OpCode as op_codes
+from helpers.constants import OpCode, SOCKET_BUFFER
 from rrq_handler import send_rrq_request
 from dat_handler import receive_dat
 from ack_handler import send_ack
 import sys
 import os
 from helpers.list_dir import list_dir
-
-sockBuffer = 2048                   # socket buffer size
 
 def is_valid_get_cmd(local_filename):
 
@@ -32,8 +30,8 @@ def main(host, port):
         return
 
     # manage initial handshake
-    handshake = pickle.loads(clientSocket.recv(sockBuffer))
-    if handshake.get("opcode") != op_codes.DAT or handshake.get("block#") != 1:
+    handshake = pickle.loads(clientSocket.recv(SOCKET_BUFFER))
+    if handshake.get("opcode") != OpCode.DAT or handshake.get("block#") != 1:
         print("Handshake failed")
         clientSocket.close()
         return
@@ -50,7 +48,7 @@ def main(host, port):
             break;
         elif cmd == "dir":
             send_rrq_request(clientSocket, "")
-            res = receive_dat(clientSocket, sockBuffer, True)
+            res = receive_dat(clientSocket, SOCKET_BUFFER, True)
             for item in res:
                 print(item.decode("ascii"))
         elif cmd.startswith("get "):
@@ -63,7 +61,7 @@ def main(host, port):
             if not is_valid_get_cmd(local_filename):
                 continue
             send_rrq_request(clientSocket, remote_filename)
-            res = receive_dat(clientSocket, sockBuffer)
+            res = receive_dat(clientSocket, SOCKET_BUFFER)
             if len(res) > 0:
                  print("File transfer completed")
         else:
@@ -83,4 +81,5 @@ if __name__ == "__main__":
         port = int(sys.argv[2])
     except ValueError:
         print("Port must be an integer"); sys.exit(1)
+
     main(host, port)

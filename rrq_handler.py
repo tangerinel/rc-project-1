@@ -1,6 +1,6 @@
 from helpers.list_dir import list_dir
 import os, pickle
-from helpers.constants import OpCode as op_codes, sockBuffer
+from helpers.constants import OpCode, SOCKET_BUFFER
 from ack_handler import receive_and_validate_ack
 from dat_handler import send_dat
 from err_handler import send_err
@@ -10,14 +10,14 @@ def send_dir_listing(connSocket, dirList):
     print("Sending directory listing with", len(dirList), "items")
     for filename in dirList:
         send_dat(connSocket, blockNum, filename.encode("ascii"))
-        response = receive_and_validate_ack(connSocket, sockBuffer, blockNum )
+        response = receive_and_validate_ack(connSocket, SOCKET_BUFFER, blockNum )
         if not response:
             send_err(connSocket, f"Failed to receive ACK for block {blockNum}")
             return
         blockNum += 1
     
     send_dat(connSocket, blockNum, b"" )
-    response = receive_and_validate_ack(connSocket, sockBuffer, blockNum )
+    response = receive_and_validate_ack(connSocket, SOCKET_BUFFER, blockNum )
     if not response:
         send_err(connSocket, f"Failed to receive ACK for block {blockNum}")
         return
@@ -32,7 +32,7 @@ def send_file_contents(connSocket, base_dir, filename):
             while True:
                 data = f.read(512)
                 send_dat(connSocket, blockNum, data)
-                response = receive_and_validate_ack(connSocket, sockBuffer, blockNum )
+                response = receive_and_validate_ack(connSocket, SOCKET_BUFFER, blockNum )
                 if not response:
                     send_err(connSocket, f"Failed to receive ACK for block {blockNum}")
                     break
@@ -65,7 +65,7 @@ def handle_rrq_request(connSocket, data):
 
 def send_rrq_request (connSocket, filename):
     rrq_packet = {
-        "opcode": op_codes.RRQ,
+        "opcode": SOCKET_BUFFER.RRQ,
         "filename": filename
     }
     connSocket.send(pickle.dumps(rrq_packet))

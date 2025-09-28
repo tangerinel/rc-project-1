@@ -1,9 +1,9 @@
-from helpers.constants import OpCode as op_codes
+from helpers.constants import OpCode
 import pickle
 
 def send_err(connSocket,  errorMsg):
     err_packet = {
-        "opcode": op_codes.ERR,
+        "opcode": OpCode.ERR,
         "error": errorMsg
     }
     connSocket.send(pickle.dumps(err_packet))
