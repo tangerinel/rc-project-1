@@ -4,13 +4,13 @@ import pickle, threading
 from helpers.constants import OpCode as op_codes, sockBuffer
 from rrq_handler import handle_rrq_request
 from dat_handler import send_dat
-from ack_handler import receive_and_validate_ACK
+from ack_handler import receive_and_validate_ack
 import sys
 
 
 def handle_client(connSocket, addr):
     send_dat(connSocket, 1, f"Welcome to {connSocket.getsockname()[0]} file server".encode("ascii"))
-    res = receive_and_validate_ACK(connSocket, sockBuffer, 1 )
+    res = receive_and_validate_ack(connSocket, sockBuffer, 1 )
     try:
         if not res: 
             return
