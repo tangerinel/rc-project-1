@@ -9,9 +9,6 @@ def receive_and_validate_ACK(connSocket, sockBuffer, expectedBlockNum):
       res = pickle.loads(data)
       return res.get("opcode") == op_codes.ACK and res.get("block#") == expectedBlockNum
 
-def handle_ACK(data):
-    print("Received ACK for block", data.get("block#"))
-    return;
 
 def send_ACK(connSocket, blockNum):
     ack_packet = {

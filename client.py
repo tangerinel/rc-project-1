@@ -2,14 +2,24 @@
 from socket import *
 import pickle
 from helpers.constants import OpCode as op_codes
-from RRQ_handler import send_RRQ
+from RRQ_handler import send_RRQ_Request
 from DAT_handler import receive_DAT
 from ACK_handler import send_ACK
 import sys
+import os
+from helpers.list_dir import list_dir
 
-serverName = "localhost"            # server name
-serverPort = 12000                  # socket server port number
 sockBuffer = 2048                   # socket buffer size
+
+def is_valid_get_cmd(local_filename):
+
+    files = list_dir(os.getcwd())
+    if local_filename in files:
+       print(f"Local file '{local_filename}' already exists")
+       return False
+    return True
+
+
 
 def main(host, port):
     clientSocket = socket(AF_INET,SOCK_STREAM)       # create TCP socket
@@ -33,17 +43,32 @@ def main(host, port):
 
 
     while True:
-        cmd = input("Enter command (dir, get <filename>, end): ").strip()
+        cmd = input("Enter command (dir, get <remote_filename> <local_filename>, end): ").strip()
         if cmd == "end":
             clientSocket.close()
-            print("Connection closed.")
+            print("Connection close, client ended")
             break;
         elif cmd == "dir":
-            send_RRQ(clientSocket, "")
-            receive_DAT(clientSocket, sockBuffer)
+            send_RRQ_Request(clientSocket, "")
+            res = receive_DAT(clientSocket, sockBuffer, True)
+            for item in res:
+                print(item.decode("ascii"))
+        elif cmd.startswith("get "):
+            parts = cmd.split(" ", 2)
+            if len(parts) != 3:
+                print("Invalid number of arguments")
+                continue
+            remote_filename = parts[1]
+            local_filename = parts[2]
+            if not is_valid_get_cmd(local_filename):
+                continue
+            send_RRQ_Request(clientSocket, remote_filename)
+            res = receive_DAT(clientSocket, sockBuffer)
+            if len(res) > 0:
+                 print("File transfer completed")
         else:
             print("Unknown command")
-            break;
+            continue;
             
 
 

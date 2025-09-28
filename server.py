@@ -1,14 +1,12 @@
 
 from socket import *
-import pickle, threading, os
-from helpers.constants import OpCode as op_codes, serverPort, sockBuffer
-from RRQ_handler import handle_RRQ
-from DAT_handler import send_DAT, handle_DAT
-from ACK_handler import receive_and_validate_ACK, handle_ACK
+import pickle, threading
+from helpers.constants import OpCode as op_codes, sockBuffer
+from RRQ_handler import handle_RRQ_Request
+from DAT_handler import send_DAT
+from ACK_handler import receive_and_validate_ACK
 import sys
 
-def handle_ERR(data):
-    print("Received ERR code", data.get("errorcode"), ":", data.get("errormsg"))
 
 def handle_client(connSocket, addr):
     send_DAT(connSocket, 1, f"Welcome to {connSocket.getsockname()[0]} file server".encode("ascii"))
@@ -23,11 +21,7 @@ def handle_client(connSocket, addr):
             data = pickle.loads(received)
             op = data.get("opcode")
             if op == op_codes.RRQ:
-                handle_RRQ(connSocket, data)
-            elif op == op_codes.ACK:
-                handle_ACK(data)
-            elif op == op_codes.ERR:
-                handle_ERR(data)
+                handle_RRQ_Request(connSocket, data)
             else:
                 print("Unknown opcode from", addr)
                 break
@@ -45,15 +39,21 @@ def main(port):
     try:
         serverSocket.bind(("", port))   
         serverSocket.listen(2)               
-        print("Server is running")          
+        print("Server is running")       
+        try:
+             while True:
+                connSocket, addr = serverSocket.accept()    # waits for incoming requests:
+                                                          # new socket created on return
+                threading.Thread(target=handle_client, args=(connSocket, addr), daemon=True).start()
+        except KeyboardInterrupt:
+            print("Server stopping")
     except OSError:
         print("Unable to start server")
         return
+    finally:
+        serverSocket.close()
 
-    while True:
-        connSocket, addr = serverSocket.accept()    # waits for incoming requests:
-                                                    # new socket created on return
-        threading.Thread(target=handle_client, args=(connSocket, addr), daemon=True).start()
+   
 
 
 if __name__ == "__main__":

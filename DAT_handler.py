@@ -12,21 +12,31 @@ def send_DAT (connSocket, blockNum, data):
     connSocket.send(pickle.dumps(data_packet))
 
 
-def handle_DAT(data):
-    print("Received DAT block", data.get("block#"))
-    return
-
-def receive_DAT (connSocket, sockBuffer):
+def receive_DAT (connSocket, sockBuffer, isDirListing=False):
+    res = []
+    expectedBlockNum = 1
     while True:
         data = connSocket.recv(sockBuffer)
         if not data:
             break;
         req = pickle.loads(data)
         if req.get("opcode") != op_codes.DAT:
-            print("Expected DAT packet")
+            if req.get("opcode") == op_codes.ERR:
+                print("Received ERR code", req.get("error"))
+            else:
+                print("Expected DAT packet")
+            connSocket.close()
             break;
-        if req.get("size") > 0:
-            print(req.get("data").decode("ascii"))
+        if req.get("block#") != expectedBlockNum:
+            print("Unexpected block number, expected", expectedBlockNum, "got", req.get("block#"))
+            connSocket.close()
+            break;
+        if req.get("size") == 512 or isDirListing and req.get("size") > 0:
+            res.append(req.get("data"))
             send_ACK(connSocket, req.get("block#"))
-        if req.get("size") <= 0:
+            expectedBlockNum += 1
+        if req.get("size") <= 512 and not isDirListing or isDirListing and req.get("size") == 0:
+            res.append(req.get("data"))
+            send_ACK(connSocket, req.get("block#"))
             break;
+    return res
