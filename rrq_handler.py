@@ -65,7 +65,7 @@ def handle_rrq_request(connSocket, data):
 
 def send_rrq_request (connSocket, filename):
     rrq_packet = {
-        "opcode": SOCKET_BUFFER.RRQ,
+        "opcode": OpCode.RRQ,
         "filename": filename
     }
     connSocket.send(pickle.dumps(rrq_packet))

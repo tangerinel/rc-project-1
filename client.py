@@ -51,10 +51,10 @@ def main(host, port):
             res = receive_dat(clientSocket, SOCKET_BUFFER, True)
             for item in res:
                 print(item.decode("ascii"))
-        elif cmd.startswith("get "):
+        elif cmd.startswith("get"):
             parts = cmd.split(" ", 2)
             if len(parts) != 3:
-                print("Invalid number of arguments")
+                print("Invalid number of arguments\nExpected: get <remote_filename> <local_filename>")
                 continue
             remote_filename = parts[1]
             local_filename = parts[2]
