@@ -58,9 +58,12 @@ def main(port):
 
 if __name__ == "__main__":
     if len(sys.argv) != 2:
+        print("Inavlid number of arguments!\nUsage: python server.py [server_port]")
         sys.exit(1)
     try:
         port = int(sys.argv[1])
     except ValueError:
-        print("Port must be an integer"); sys.exit(1)
+        print("Port must be an integer")
+        sys.exit(1)
+
     main(port)
