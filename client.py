@@ -1,15 +1,13 @@
 
 from socket import *
 import pickle
-from helpers.constants import OpCode as op_codes
-from RRQ_handler import send_RRQ_Request
-from DAT_handler import receive_DAT
-from ACK_handler import send_ACK
+from helpers.constants import OpCode, SOCKET_BUFFER
+from rrq_handler import send_rrq_request
+from dat_handler import receive_dat
+from ack_handler import send_ack
 import sys
 import os
 from helpers.list_dir import list_dir
-
-sockBuffer = 2048                   # socket buffer size
 
 def is_valid_get_cmd(local_filename):
 
@@ -31,13 +29,13 @@ def main(host, port):
         print("Unable to connect with the server")
         return
 
-    #manage initial handshake
-    handshake = pickle.loads(clientSocket.recv(sockBuffer))
-    if handshake.get("opcode") != op_codes.DAT or handshake.get("block#") != 1:
+    # manage initial handshake
+    handshake = pickle.loads(clientSocket.recv(SOCKET_BUFFER))
+    if handshake.get("opcode") != OpCode.DAT or handshake.get("block#") != 1:
         print("Handshake failed")
         clientSocket.close()
         return
-    send_ACK(clientSocket,  handshake.get("block#"));
+    send_ack(clientSocket,  handshake.get("block#"));
 
     print(handshake.get("data").decode("ascii"))
 
@@ -49,23 +47,29 @@ def main(host, port):
             print("Connection close, client ended")
             break;
         elif cmd == "dir":
-            send_RRQ_Request(clientSocket, "")
-            res = receive_DAT(clientSocket, sockBuffer, True)
+            send_rrq_request(clientSocket, "")
+            res = receive_dat(clientSocket, SOCKET_BUFFER, True)
             for item in res:
                 print(item.decode("ascii"))
-        elif cmd.startswith("get "):
+        elif cmd.startswith("get"):
             parts = cmd.split(" ", 2)
             if len(parts) != 3:
-                print("Invalid number of arguments")
+                print("Invalid number of arguments\nExpected: get <remote_filename> <local_filename>")
                 continue
             remote_filename = parts[1]
             local_filename = parts[2]
             if not is_valid_get_cmd(local_filename):
                 continue
-            send_RRQ_Request(clientSocket, remote_filename)
-            res = receive_DAT(clientSocket, sockBuffer)
+            send_rrq_request(clientSocket, remote_filename)
+            res = receive_dat(clientSocket, SOCKET_BUFFER)
             if len(res) > 0:
-                 print("File transfer completed")
+                try:
+                    with open(local_filename, "wb") as f:
+                        for chunk in res:
+                            f.write(chunk)
+                    print("File transfer completed")
+                except Exception as e:
+                    print(f"Error saving file: {e}")
         else:
             print("Unknown command")
             continue;
@@ -76,10 +80,12 @@ def main(host, port):
 
 if __name__ == "__main__":
     if len(sys.argv) != 3:
+        print("Inavlid number of arguments!\nUsage: python client.py [server_ip][server_port]")
         sys.exit(1)
     host = sys.argv[1]
     try:
         port = int(sys.argv[2])
     except ValueError:
         print("Port must be an integer"); sys.exit(1)
+
     main(host, port)
