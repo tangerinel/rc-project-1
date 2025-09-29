@@ -63,7 +63,13 @@ def main(host, port):
             send_rrq_request(clientSocket, remote_filename)
             res = receive_dat(clientSocket, SOCKET_BUFFER)
             if len(res) > 0:
-                 print("File transfer completed")
+                try:
+                    with open(local_filename, "wb") as f:
+                        for chunk in res:
+                            f.write(chunk)
+                    print("File transfer completed")
+                except Exception as e:
+                    print(f"Error saving file: {e}")
         else:
             print("Unknown command")
             continue;

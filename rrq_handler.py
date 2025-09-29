@@ -36,7 +36,7 @@ def send_file_contents(connSocket, base_dir, filename):
                 if not response:
                     send_err(connSocket, f"Failed to receive ACK for block {blockNum}")
                     break
-                if len(data) <= 0:
+                if len(data) < 512:
                     break
                 blockNum += 1
     except Exception as e:
